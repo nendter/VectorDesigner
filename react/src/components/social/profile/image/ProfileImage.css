@@ -1,0 +1,17 @@
+.profile-image{
+    width: var(--container-size-26);
+    height: var(--container-size-26);
+
+    border-radius: 999rem;
+    background: var(--primary);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.profile-image p.initials{
+    font-size: var(--text-size-11);
+    font-weight: 700;
+    color: var(--tint);
+    transform: translateY(-.5px);
+}

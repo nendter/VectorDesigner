@@ -1,0 +1,30 @@
+.editor-toolbar{
+    height: 100%;
+    display: flex;
+}
+
+.editor-toolbar .tool{
+    height: var(--top-bar-height);
+    width: var(--top-bar-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    --tool-svg-ratio: .30;
+}
+.editor-toolbar .tool svg{
+    width: calc(var(--top-bar-height) * var(--tool-svg-ratio));
+    height: calc(var(--top-bar-height) * var(--tool-svg-ratio));
+
+    fill: var(--tint-4);
+}
+
+.editor-toolbar .tool.selected{
+    border: var(--divider);
+    border-top: none;
+    border-bottom-color: var(--primary);
+    background: var(--shade-3);
+}
+.editor-toolbar .tool.selected svg{
+    fill: var(--primary);
+}

@@ -1,0 +1,23 @@
+:root{
+    --top-bar-height: 2.8rem;
+    --bottom-bar-height: 1.8rem;
+    --side-bar-width: 13rem;
+
+    --container-size-18: .9rem;
+    --container-size-20: 1rem;
+    --container-size-26: 1.4rem;
+    --container-size-30: 1.5rem;
+
+    --text-size-14: .85rem;
+    --text-size-11: .70rem;
+    --text-size-10: .65rem;
+    --text-size-8: .55rem;
+
+    --spacing-20: 1rem;
+    --spacing-14: .7rem;
+    --spacing-12: .6rem;
+    --spacing-10: .5rem;
+    --spacing-8: .4rem;
+
+    --border-radius-6: .3rem;
+}

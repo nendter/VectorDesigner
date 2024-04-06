@@ -1,0 +1,8 @@
+.bottom-bar{
+    width: 100%;
+    height: var(--bottom-bar-height);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: var(--divider);
+}

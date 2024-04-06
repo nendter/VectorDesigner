@@ -1,0 +1,54 @@
+.top-bar{
+    width: 100%;
+    height: var(--top-bar-height);
+
+    display: flex;
+    align-items: center;
+
+    background: var(--shade-2);
+    border-bottom: var(--divider);
+}
+
+.top-bar .main{
+    width: var(--side-bar-width);
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+
+    padding: 0 var(--spacing-20);
+    border-right: var(--divider);
+}
+.top-bar .main .logo{
+    width: var(--text-size-14);
+    height: var(--text-size-14);
+    fill: var(--primary);
+
+    transform: translateY(22%) scaleY(-1);
+
+    margin-right: var(--spacing-10);
+}
+.top-bar .main h2{
+    font-size: var(--text-size-14);
+    font-weight: 800;
+    flex: 1;
+    text-align: start;
+}
+
+.top-bar .social{
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-20);
+    border-left: var(--divider);
+}
+.top-bar .social .bell{
+    margin-right: var(--spacing-12);
+}
+.top-bar .social .bell svg{
+    transform: rotate(30deg) translateY(1px);
+}
+
+.top-bar .content{
+    flex: 1;
+}

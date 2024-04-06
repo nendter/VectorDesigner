@@ -1,13 +1,93 @@
-body {
+@import url("./index.colors.css");
+@import url("./index.dimensions.css");
+
+
+/* General */
+* {
   margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+  sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
 
+  background: var(--shade);
+  color: var(--tint);
+}
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  monospace;
+}
+button,textarea,input,img{
+  background: none;
+  border: none;
+  outline: none;
+}
+button{
+  cursor: pointer;
+}
+svg{
+  overflow: visible;
+}
+
+
+/* Button Styles */
+button.size-20{
+  width: var(--container-size-20);
+  height: var(--container-size-20);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+button.size-20 svg{
+  width: var(--text-size-11);
+  height: var(--text-size-11);
+  fill: var(--tint-4);
+  transform: translateY(1px);
+}
+
+button.size-18{
+  width: var(--container-size-18);
+  height: var(--container-size-18);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+button.size-18 svg{
+  width: var(--text-size-8);
+  height: var(--text-size-8);
+  fill: var(--tint-4);
+  transform: translateY(1px);
+}
+
+button.primary{
+  height: var(--container-size-30);
+  padding: 0 var(--spacing-14);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--primary-20);
+  border-radius: var(--border-radius-6);
+}
+button.primary p{
+  font-size: var(--text-size-10);
+  font-weight: 600;
+  color: var(--primary);
+  transform: translateY(-.5px);
+}
+
+
+/* Library */
+.row{
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
