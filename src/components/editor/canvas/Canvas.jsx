@@ -7,6 +7,9 @@ export function Canvas(){
     const webgl = useRef(undefined);
     useEffect(() => {
         webgl.current = new WebGL(ref.current);
+        webgl.current.drawTriangle().then(() => {
+            console.log("Drew Triangle!")
+        });
     }, [ref]);
     return (
         <canvas ref={ref} className={"canvas"}></canvas>
