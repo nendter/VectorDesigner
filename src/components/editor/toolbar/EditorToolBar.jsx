@@ -6,7 +6,7 @@ import {EditorContext} from "../EditorContextProvider";
 export const EditorTools = [
     {
         id: "shape",
-        icon: Icons.Rectangle,
+        icon: Icons.Triangle,
     },
     {
         id: "pen",
