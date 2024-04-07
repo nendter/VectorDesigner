@@ -1,9 +1,11 @@
 import {Program} from "../programs/Programs";
+import {Icons} from "../../components/icon/Icon";
 
 export const LayerType = {
     Triangle: {
         id: "triangle",
-        programId: Program.Triangle.id
+        programId: Program.Triangle.id,
+        icon: Icons.Triangle
     }
 }
 

@@ -1,0 +1,10 @@
+.overlays{
+    position: fixed;
+    top: calc(var(--top-bar-height) + var(--spacing-20));
+    left: var(--spacing-20);
+    width: calc(100% - var(--spacing-20)*2);
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}

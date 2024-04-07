@@ -1,0 +1,32 @@
+.layers{
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.layers .layer{
+    width: 100%;
+    height: var(--container-size-30);
+    border-radius: var(--border-radius-6);
+
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-10);
+
+    transition: .2s ease background;
+}
+.layers .layer.selected, .layers .layer:hover{
+    background: var(--shade-3);
+}
+
+.layers .layer svg{
+    width: var(--text-size-7);
+    height: var(--text-size-7);
+    fill: var(--tint-4);
+    margin-right: var(--spacing-8);
+}
+.layers .layer p{
+    font-size: var(--text-size-9);
+    font-weight: 500;
+    color: var(--tint-4);
+}

@@ -47,7 +47,7 @@ button.size-20{
 button.size-20 svg{
   width: var(--text-size-11);
   height: var(--text-size-11);
-  fill: var(--tint-4);
+  fill: var(--tint-5);
   transform: translateY(1px);
 }
 
@@ -62,7 +62,7 @@ button.size-18{
 button.size-18 svg{
   width: var(--text-size-8);
   height: var(--text-size-8);
-  fill: var(--tint-4);
+  fill: var(--tint-5);
   transform: translateY(1px);
 }
 
@@ -90,4 +90,11 @@ button.primary p{
   display: flex;
   align-items: center;
   height: 100%;
+}
+
+.hint{
+  font-size: var(--text-size-10);
+  color: var(--tint-4);
+  font-weight: 400;
+  padding: var(--spacing-12);
 }
