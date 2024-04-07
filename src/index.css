@@ -30,8 +30,25 @@ button,textarea,input,img{
 button{
   cursor: pointer;
 }
+input{
+  font-size: var(--text-size-9);
+  font-weight: 600;
+  color: var(--tint-2);
+}
 svg{
   overflow: visible;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+::placeholder{
+  color: var(--tint-5);
 }
 
 

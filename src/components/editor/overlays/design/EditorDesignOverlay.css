@@ -1,0 +1,6 @@
+.transformation-grid{
+    max-width: var(--overlay-width);
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr;
+    gap: var(--spacing-8);
+}

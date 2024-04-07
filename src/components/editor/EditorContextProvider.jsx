@@ -17,8 +17,8 @@ export function EditorContextProvider({ children }){
     /**
      * Every object to draw is a layer. Earlier in the list, means drawn first / underneath the later items
      */
-    const [layers, setLayers] = useState([
-        {
+    const [layers, setLayers] = useState({
+        "1": {
             id: "1",
             name: "Triangle 1",
             type: LayerType.Triangle,
@@ -27,7 +27,7 @@ export function EditorContextProvider({ children }){
             rotation: 0,
             fill: ColorUtils.hexToRgba("333333"),
         },
-        {
+        "2": {
             id: "2",
             name: "Triangle 2",
             type: LayerType.Triangle,
@@ -36,7 +36,7 @@ export function EditorContextProvider({ children }){
             rotation: 30 * (Math.PI / 180),
             fill: ColorUtils.hexToRgba("1188FF"),
         }
-    ])
+    })
     const [selectedLayers, setSelectedLayers] = useState([]);
 
     return (

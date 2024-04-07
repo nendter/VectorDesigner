@@ -1,0 +1,31 @@
+.narrow-number-input{
+    height: var(--container-size-26);
+    width: calc(var(--overlay-width) / 3);
+    padding: 0 var(--spacing-8);
+
+    display: flex;
+    align-items: center;
+
+    border-radius: var(--border-radius-6);
+    border: var(--border);
+    border-color: transparent;
+
+    transition: .2s ease background, .2s ease border;
+}
+.narrow-number-input:hover, .narrow-number-input:has(input:focus){
+    border: var(--border);
+    background: var(--shade-3);
+}
+
+.narrow-number-input label{
+    font-size: var(--text-size-9);
+    font-weight: 600;
+    color: var(--tint-4);
+    min-width: var(--container-size-20);
+    text-align: left;
+}
+
+.narrow-number-input input{
+    height: var(--container-size-26);
+    max-width: 100%;
+}

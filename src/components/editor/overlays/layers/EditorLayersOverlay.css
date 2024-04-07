@@ -6,7 +6,10 @@
 
 .layers .layer{
     width: 100%;
-    height: var(--container-size-30);
+    height: var(--container-size-26);
+
+    border: var(--border);
+    border-color: transparent;
     border-radius: var(--border-radius-6);
 
     display: flex;
@@ -14,9 +17,21 @@
     padding: 0 var(--spacing-10);
 
     transition: .2s ease background;
+    margin-bottom: var(--spacing-2);
 }
+.layers .layer:last-child{
+    margin-bottom: 0;
+}
+
 .layers .layer.selected, .layers .layer:hover{
+    border: var(--border);
     background: var(--shade-3);
+}
+.layers .layer.selected p, .layers .layer:hover p{
+    color: var(--tint-2);
+}
+.layers .layer.selected svg, .layers .layer:hover svg{
+    fill: var(--tint-2);
 }
 
 .layers .layer svg{
@@ -24,9 +39,20 @@
     height: var(--text-size-7);
     fill: var(--tint-4);
     margin-right: var(--spacing-8);
+    transform: translateY(-.5px);
 }
 .layers .layer p{
     font-size: var(--text-size-9);
     font-weight: 500;
     color: var(--tint-4);
+    flex: 1;
+    text-align: left;
+}
+
+.layers .layer .delete{
+    opacity: 0;
+    transition: .2s ease opacity;
+}
+.layers .layer:hover .delete{
+    opacity: 1;
 }

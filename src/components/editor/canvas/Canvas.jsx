@@ -3,6 +3,7 @@ import {useContext, useEffect, useRef} from "react";
 import {WebGLTest} from "../../../webgl/WebGLTest";
 import {WebGLRenderer} from "../../../webgl/WebGLRenderer";
 import {EditorContext} from "../EditorContextProvider";
+import {LayerTypeGenerator} from "../../../webgl/layers/LayerTypes";
 
 export function Canvas(){
     const ref = useRef();
@@ -13,7 +14,7 @@ export function Canvas(){
         if(!ref.current || !webGLRenderer.current){
             return;
         }
-        renderLayers();
+        initLayers();
     }, [editorCtx.layers])
 
     useEffect(() => {
@@ -22,14 +23,24 @@ export function Canvas(){
         }catch(e){
             // TODO: Show Toast or sth, that webgl isn't available
         }
-        renderLayers();
+        initLayers();
     }, [ref]);
 
-    const renderLayers = () => {
-        webGLRenderer.current.initLayers(editorCtx.layers);
+    const initLayers = () => {
+        webGLRenderer.current.initLayers(Object.values(editorCtx.layers));
+    }
+
+    const canvasClick = (ev) => {
+        editorCtx.setLayers(prev => {
+            const newLayer = LayerTypeGenerator[editorCtx.tool.id].generate("Triangle");
+            return {
+                ...prev,
+                [newLayer.id]: newLayer
+            }
+        })
     }
 
     return (
-        <canvas ref={ref} className={"canvas"}></canvas>
+        <canvas ref={ref} className={"canvas"} onClick={canvasClick}></canvas>
     )
 }
