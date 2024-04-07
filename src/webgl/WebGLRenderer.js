@@ -3,6 +3,7 @@ import {mat4} from "gl-matrix";
 import {Program} from "./programs/Programs";
 import {ShaderUtils} from "./utils/ShaderUtils";
 import {LayerType, LayerTypeDataGenerator} from "./layers/LayerTypes";
+import {BufferUtils} from "./utils/BufferUtils";
 
 /**
  * Height of the canvas in webgl "units".
@@ -24,7 +25,7 @@ export class WebGLRenderer{
         this._initVPMatrices();
         this._initPrograms().then(() => {
             if(this._openLayerRender){
-                this.renderLayers(this._openLayerRender);
+                this.initLayers(this._openLayerRender);
             }
         });
     }
@@ -83,7 +84,7 @@ export class WebGLRenderer{
     }
 
 
-    renderLayers(layers){
+    initLayers(layers){
         if(!this._programs){
             this._openLayerRender = layers;
             return;
@@ -119,47 +120,57 @@ export class WebGLRenderer{
             return;
         }
 
-        const triangleProgramDataSizeBuffer = this._gl.createBuffer();
-        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleProgramDataSizeBuffer);
-        this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(triangleProgramData.sizes), this._gl.DYNAMIC_DRAW);
-        this._gl.vertexAttribPointer(
-            triangleProgram.attributes.get("size"),
-            2,
-            this._gl.FLOAT,
-            false,
-            0,
-            0
-        );
-
-        const triangleProgramDataPositionBuffer = this._gl.createBuffer();
-        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleProgramDataPositionBuffer);
-        this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(triangleProgramData.positions), this._gl.DYNAMIC_DRAW);
-        this._gl.vertexAttribPointer(
-            triangleProgram.attributes.get("position"),
-            2,
-            this._gl.FLOAT,
-            false,
-            0,
-            0
-        );
-
-        const triangleProgramDataVerticesBuffer = this._gl.createBuffer();
-        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleProgramDataVerticesBuffer);
-        this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(triangleProgramData.vertices), this._gl.STATIC_DRAW);
-        this._gl.vertexAttribPointer(
+        this._triangleProgramDataVerticesBuffer = BufferUtils.createArrayBufferForVertexAttribute(
+            this._gl,
+            triangleProgramData.vertices,
+            this._gl.STATIC_DRAW,
             triangleProgram.attributes.get("vertices"),
-            2,
-            this._gl.FLOAT,
-            false,
-            0,
-            0
+            2
+        );
+
+        this._triangleProgramDataPositionBuffer = BufferUtils.createArrayBufferForVertexAttribute(
+            this._gl,
+            triangleProgramData.positions,
+            this._gl.DYNAMIC_DRAW,
+            triangleProgram.attributes.get("position"),
+            2
+        );
+
+        this._triangleProgramDataSizeBuffer = BufferUtils.createArrayBufferForVertexAttribute(
+            this._gl,
+            triangleProgramData.sizes,
+            this._gl.DYNAMIC_DRAW,
+            triangleProgram.attributes.get("size"),
+            2
+        );
+
+        this._triangleProgramDataRotationBuffer = BufferUtils.createArrayBufferForVertexAttribute(
+            this._gl,
+            triangleProgramData.rotations,
+            this._gl.DYNAMIC_DRAW,
+            triangleProgram.attributes.get("rotation"),
+            1
+        );
+
+        this._triangleProgramDataRotationBuffer = BufferUtils.createArrayBufferForVertexAttribute(
+            this._gl,
+            triangleProgramData.colors,
+            this._gl.DYNAMIC_DRAW,
+            triangleProgram.attributes.get("color"),
+            4
         );
 
         this._gl.useProgram(triangleProgram.program);
+
         this._gl.uniformMatrix4fv(triangleProgram.uniforms.get("vMatrix"), false, this._vMatrix);
         this._gl.uniformMatrix4fv(triangleProgram.uniforms.get("pMatrix"), false, this._pMatrix);
 
         this._gl.drawArrays(this._gl.TRIANGLES, 0, triangleProgramData.vertices.length/2);
+
+        this._renderedLayers = layers;
+    }
+
+    rerenderLayer(layer){
 
     }
 

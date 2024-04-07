@@ -26,7 +26,7 @@ export function Canvas(){
     }, [ref]);
 
     const renderLayers = () => {
-        webGLRenderer.current.renderLayers(editorCtx.layers);
+        webGLRenderer.current.initLayers(editorCtx.layers);
     }
 
     return (
