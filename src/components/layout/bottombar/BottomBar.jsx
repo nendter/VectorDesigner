@@ -1,5 +1,4 @@
 import "./BottomBar.css";
-import {Icon, Icons} from "../../icon/Icon";
 
 export function BottomBar({ children }){
     return (

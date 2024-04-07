@@ -1,12 +1,14 @@
 import {FullScreenLayout} from "../layout/fullscreen/FullScreenLayout";
 import {TopBar} from "../layout/topbar/TopBar";
-import {EditorToolBar, EditorTools} from "./toolbar/EditorToolBar";
+import {EditorToolBar} from "./toolbar/EditorToolBar";
 import {EditorContext, EditorContextProvider} from "./EditorContextProvider";
 import "./EditorRoute.css";
 import {BottomBar} from "../layout/bottombar/BottomBar";
 import {Canvas} from "./canvas/Canvas";
 import {Icon, Icons} from "../icon/Icon";
 import {useContext} from "react";
+
+export const EditorRoutePath = "/editor";
 
 export function EditorRoute(){
     const editorCtx = useContext(EditorContext);
