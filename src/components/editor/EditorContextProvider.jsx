@@ -15,7 +15,7 @@ export function EditorContextProvider({ children }){
     const [tool, setTool] = useState(EditorTools[0]);
     const [zoom, setZoom] = useState(1);
     /**
-     * Every object to draw is a layer. Earlier in the list, means drawn first / underneath the later items
+     * Every object to draw is a layer
      */
     const [layers, setLayers] = useState({
         "1": {
@@ -39,6 +39,19 @@ export function EditorContextProvider({ children }){
     })
     const [selectedLayers, setSelectedLayers] = useState([]);
 
+    /**
+     * A queue that collects all changes made to the layers.
+     * {@link Canvas} reacts to changes and re-renders the layer accordingly
+     */
+    const [changeQueue, setChangeQueue] = useState([]);
+    /**
+     * This serves as a pipe through which all changes must be registered.
+     * @param change An object containing the layer id as well as the changes made
+     */
+    const changeLayer = (change) => {
+        setChangeQueue(prev => [...prev, change]);
+    }
+
     return (
         <EditorContext.Provider value={{
             tool: tool,
@@ -48,7 +61,11 @@ export function EditorContextProvider({ children }){
             setZoom: setZoom,
 
             layers: layers,
-            setLayers: setLayers
+            setLayers: setLayers,
+
+            changeQueue: changeQueue,
+            setChangeQueue: setChangeQueue,
+            changeLayer: changeLayer
         }}>
             {children}
             <div className="overlays">
@@ -56,7 +73,7 @@ export function EditorContextProvider({ children }){
                     <EditorLayersOverlay layers={layers} setLayers={setLayers} selectedLayers={selectedLayers} setSelectedLayers={setSelectedLayers}></EditorLayersOverlay>
                 </div>
                 <div>
-                    <EditorDesignOverlay layers={layers} setLayers={setLayers} selectedLayers={selectedLayers} setSelectedLayers={setSelectedLayers}></EditorDesignOverlay>
+                    <EditorDesignOverlay layers={layers} changeLayer={changeLayer} selectedLayers={selectedLayers}></EditorDesignOverlay>
                 </div>
             </div>
         </EditorContext.Provider>

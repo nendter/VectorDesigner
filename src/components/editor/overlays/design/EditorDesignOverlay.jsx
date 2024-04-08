@@ -3,28 +3,23 @@ import {NarrowNumberInput} from "../../../inputs/narrow-number/NarrowNumberInput
 import "./EditorDesignOverlay.css";
 import {Icon, Icons} from "../../../icon/Icon";
 
-export function EditorDesignOverlay({ layers, setLayers, selectedLayers, setSelectedLayers }){
+export function EditorDesignOverlay({ layers, changeLayer, selectedLayers }){
 
     const updateSelectedLayer = (updatedFields) => {
-        setLayers(prev => {
-            return {
-                ...prev,
-                [selectedLayers[0]]: {
-                    ...prev[selectedLayers[0]],
-                    ...updatedFields
-                }
-            }
+        changeLayer({
+            layerId: selectedLayers[0],
+            updatedFields: updatedFields
         })
     }
 
     return (
         <Overlay title={"Design"}>
-            {selectedLayers?.length > 0 ? <>
+            {(selectedLayers?.length > 0 && layers[selectedLayers[0]] !== undefined) ? <>
                 <div className="transformation-grid">
                     <NarrowNumberInput label={"X"} value={layers[selectedLayers[0]].position[0]} onChange={(ev) => {
                         updateSelectedLayer({
                             position: [
-                                ev.target.value,
+                                Number(ev.target.value),
                                 layers[selectedLayers[0]].position[1]
                             ]
                         })
@@ -33,7 +28,7 @@ export function EditorDesignOverlay({ layers, setLayers, selectedLayers, setSele
                         updateSelectedLayer({
                             position: [
                                 layers[selectedLayers[0]].position[0],
-                                ev.target.value,
+                                Number(ev.target.value),
                             ]
                         })
                     }}></NarrowNumberInput>
@@ -42,7 +37,7 @@ export function EditorDesignOverlay({ layers, setLayers, selectedLayers, setSele
                     <NarrowNumberInput label={"W"} value={layers[selectedLayers[0]].size[0]} onChange={(ev) => {
                         updateSelectedLayer({
                             size: [
-                                ev.target.value,
+                                Number(ev.target.value),
                                 layers[selectedLayers[0]].size[1]
                             ]
                         })
@@ -51,15 +46,15 @@ export function EditorDesignOverlay({ layers, setLayers, selectedLayers, setSele
                         updateSelectedLayer({
                             size: [
                                 layers[selectedLayers[0]].size[0],
-                                ev.target.value,
+                                Number(ev.target.value),
                             ]
                         })
                     }}></NarrowNumberInput>
                     <div></div>
 
-                    <NarrowNumberInput label={"R"} value={layers[selectedLayers[0]].rotation?.toFixed(2)} onChange={(ev) => {
+                    <NarrowNumberInput label={"R"} value={layers[selectedLayers[0]].rotation?.toFixed(0)} onChange={(ev) => {
                         updateSelectedLayer({
-                            rotation: ev.target.value
+                            rotation: Number(ev.target.value)
                         })
                     }}></NarrowNumberInput>
                 </div>

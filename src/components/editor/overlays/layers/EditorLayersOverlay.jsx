@@ -16,7 +16,7 @@ export function EditorLayersOverlay({layers, setLayers, selectedLayers, setSelec
         <Overlay title={"Layers"}>
             <div className="layers">
                 {Object.values(layers).map(layer =>
-                    <button key={layer.id}
+                    <div key={layer.id}
                             className={`layer ${selectedLayers.includes(layer.id) ? "selected":""}`}
                             onClick={() => setSelectedLayers([layer.id])}>
                         <Icon icon={layer.type.icon}></Icon>
@@ -24,7 +24,7 @@ export function EditorLayersOverlay({layers, setLayers, selectedLayers, setSelec
                         <button className={"size-18 delete"} onClick={(ev) => deleteLayer(ev, layer.id)}>
                             <Icon icon={Icons.Delete}></Icon>
                         </button>
-                    </button>
+                    </div>
                 )}
             </div>
         </Overlay>

@@ -4,6 +4,7 @@ import {Program} from "./programs/Programs";
 import {ShaderUtils} from "./utils/ShaderUtils";
 import {LayerType, LayerTypeDataGenerator} from "./layers/LayerTypes";
 import {BufferUtils} from "./utils/BufferUtils";
+import {ArrayUtils} from "./utils/ArrayUtils";
 
 /**
  * Height of the canvas in webgl "units".
@@ -22,12 +23,19 @@ export class WebGLRenderer{
             throw new Error("WebGL not supported!")
         }
 
-        this._initVPMatrices();
-        this._initPrograms().then(() => {
-            if(this._openLayerRender){
-                this.initLayers(this._openLayerRender);
+        this._initAll().then(() => {
+            if(this._unrenderedLayers){
+                this.loadLayerData(this._unrenderedLayers);
+                this.render();
             }
         });
+    }
+
+
+    async _initAll(){
+        this._initVPMatrices();
+        await this._initPrograms();
+        await this._initBuffers();
     }
 
 
@@ -84,94 +92,139 @@ export class WebGLRenderer{
     }
 
 
-    initLayers(layers){
+    async _initBuffers(){
+        const triangleProgram = this._programs.get(Program.Triangle.id);
+        triangleProgram.buffers = {};
+
+        triangleProgram.buffers.vertices = this._initFloatArrayBufferForAttribute(
+            triangleProgram.attributes.get("vertices"),
+            2);
+        triangleProgram.buffers.position = this._initFloatArrayBufferForAttribute(
+            triangleProgram.attributes.get("position"),
+            2);
+        triangleProgram.buffers.size = this._initFloatArrayBufferForAttribute(
+            triangleProgram.attributes.get("size"),
+            2);
+        triangleProgram.buffers.rotation = this._initFloatArrayBufferForAttribute(
+            triangleProgram.attributes.get("rotation"),
+            1);
+        triangleProgram.buffers.color = this._initFloatArrayBufferForAttribute(
+            triangleProgram.attributes.get("color"),
+            4);
+    }
+
+    _initFloatArrayBufferForAttribute(attributeLoc, groupSize){
+        const buffer = this._gl.createBuffer();
+        this._gl.bindBuffer(this._gl.ARRAY_BUFFER, buffer);
+        this._gl.vertexAttribPointer(
+            attributeLoc,
+            groupSize,
+            this._gl.FLOAT,
+            false,
+            0,
+            0
+        );
+        return buffer;
+    }
+
+
+    loadLayerData(layers){
         if(!this._programs){
-            this._openLayerRender = layers;
+            this._unrenderedLayers = layers;
             return;
         }
-        this._openLayerRender = undefined;
+        this._unrenderedLayers = undefined;
         this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT);
 
-        const triangleProgramData = {
+        const triangleProgram = this._programs.get(Program.Triangle.id);
+        if(!triangleProgram){
+            this._unrenderedLayers = layers;
+            return;
+        }
+
+        triangleProgram.data = {
             vertices: [],
-            positions: [],
-            sizes: [],
-            rotations: [],
-            colors: []
+            position: [],
+            size: [],
+            rotation: [],
+            color: []
         }
         for(const layer of layers){
             switch(layer.type.programId){
                 case Program.Triangle.id:
                     const dataGenerator = LayerTypeDataGenerator[layer.type.id];
                     for(let vertices of dataGenerator.generateVertices()){
-                        triangleProgramData.vertices.push(...vertices);
-                        triangleProgramData.positions.push(...layer.position);
-                        triangleProgramData.sizes.push(...layer.size);
-                        triangleProgramData.rotations.push(layer.rotation);
-                        triangleProgramData.colors.push(...layer.fill);
+                        triangleProgram.data.vertices.push(...vertices);
+                        triangleProgram.data.position.push(...layer.position);
+                        triangleProgram.data.size.push(...layer.size);
+                        triangleProgram.data.rotation.push(layer.rotation);
+                        triangleProgram.data.color.push(...layer.fill);
                     }
                     break;
             }
         }
 
-        const triangleProgram = this._programs.get(Program.Triangle.id);
-        if(!triangleProgram){
-            this._openLayerRender = layers;
+        for(let attribute of Object.keys(triangleProgram.buffers)){
+            this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleProgram.buffers[attribute]);
+            this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(triangleProgram.data[attribute]),  attribute === "vertices" ? this._gl.STATIC_DRAW:this._gl.DYNAMIC_DRAW);
+        }
+
+        this._loadedLayers = layers;
+    }
+
+    updateLayerData(change){
+        if(!this._loadedLayers || this._loadedLayers.length < 1){
+            return;
+        }
+        let layer;
+        let layerIndex;
+        for(let i = 0; i < this._loadedLayers.length; i++){
+            const l = this._loadedLayers[i];
+            if(l.id === change.layerId){
+                layer = l;
+                layerIndex = i;
+                break;
+            }
+        }
+        if(!layer){
             return;
         }
 
-        this._triangleProgramDataVerticesBuffer = BufferUtils.createArrayBufferForVertexAttribute(
-            this._gl,
-            triangleProgramData.vertices,
-            this._gl.STATIC_DRAW,
-            triangleProgram.attributes.get("vertices"),
-            2
-        );
+        console.log("layerIndex")
+        console.log(layerIndex);
 
-        this._triangleProgramDataPositionBuffer = BufferUtils.createArrayBufferForVertexAttribute(
-            this._gl,
-            triangleProgramData.positions,
-            this._gl.DYNAMIC_DRAW,
-            triangleProgram.attributes.get("position"),
-            2
-        );
+        const triangleProgram = this._programs.get(Program.Triangle.id);
+        for(let updateKey of Object.keys(change.updatedFields)){
+            switch(updateKey){
+                case "position":
+                    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleProgram.buffers.position);
+                    this._gl.bufferSubData(this._gl.ARRAY_BUFFER,
+                        layerIndex*(3*2),
+                        new Float32Array(
+                            ArrayUtils.repeat(change.updatedFields[updateKey], 3)
+                        ));
+                    break;
+            }
+        }
+    }
 
-        this._triangleProgramDataSizeBuffer = BufferUtils.createArrayBufferForVertexAttribute(
-            this._gl,
-            triangleProgramData.sizes,
-            this._gl.DYNAMIC_DRAW,
-            triangleProgram.attributes.get("size"),
-            2
-        );
 
-        this._triangleProgramDataRotationBuffer = BufferUtils.createArrayBufferForVertexAttribute(
-            this._gl,
-            triangleProgramData.rotations,
-            this._gl.DYNAMIC_DRAW,
-            triangleProgram.attributes.get("rotation"),
-            1
-        );
+    render(){
+        if(!this._programs){
+            return;
+        }
 
-        this._triangleProgramDataRotationBuffer = BufferUtils.createArrayBufferForVertexAttribute(
-            this._gl,
-            triangleProgramData.colors,
-            this._gl.DYNAMIC_DRAW,
-            triangleProgram.attributes.get("color"),
-            4
-        );
+        const triangleProgram = this._programs.get(Program.Triangle.id);
+        if(!triangleProgram){
+            return;
+        }
 
         this._gl.useProgram(triangleProgram.program);
 
         this._gl.uniformMatrix4fv(triangleProgram.uniforms.get("vMatrix"), false, this._vMatrix);
         this._gl.uniformMatrix4fv(triangleProgram.uniforms.get("pMatrix"), false, this._pMatrix);
 
-        this._gl.drawArrays(this._gl.TRIANGLES, 0, triangleProgramData.vertices.length/2);
-
-        this._renderedLayers = layers;
-    }
-
-    rerenderLayer(layer){
-
+        this._gl.drawArrays(this._gl.TRIANGLES, 0, triangleProgram.data.vertices.length/2);
     }
 
 }

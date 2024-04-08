@@ -11,6 +11,8 @@
     border-color: transparent;
 
     transition: .2s ease background, .2s ease border;
+
+    cursor: ew-resize;
 }
 .narrow-number-input:hover, .narrow-number-input:has(input:focus){
     border: var(--border);
@@ -23,9 +25,11 @@
     color: var(--tint-4);
     min-width: var(--container-size-20);
     text-align: left;
+    pointer-events: none;
 }
 
 .narrow-number-input input{
     height: var(--container-size-26);
     max-width: 100%;
+    cursor: text;
 }
