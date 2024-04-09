@@ -25,7 +25,7 @@ export function EditorContextProvider({ children }){
             position: [0.1, 0.1],
             size: [.1, .1],
             rotation: 0,
-            fill: ColorUtils.hexToRgba("333333"),
+            color: ColorUtils.hexToRgba("333333"),
         },
         "2": {
             id: "2",
@@ -34,7 +34,7 @@ export function EditorContextProvider({ children }){
             position: [-0.4, -0.4],
             size: [.1, .1],
             rotation: 30 * (Math.PI / 180),
-            fill: ColorUtils.hexToRgba("1188FF"),
+            color: ColorUtils.hexToRgba("1188FF"),
         }
     })
     const [selectedLayers, setSelectedLayers] = useState([]);

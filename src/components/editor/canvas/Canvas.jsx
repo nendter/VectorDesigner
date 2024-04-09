@@ -9,12 +9,6 @@ export function Canvas(){
     const webGLRenderer = useRef(undefined);
 
     const editorCtx = useContext(EditorContext);
-    useEffect(() => {
-        if(!ref.current || !webGLRenderer.current){
-            return;
-        }
-        // initLayers();
-    }, [editorCtx.layers])
 
     const processingQueue = useRef(false);
     useEffect(() => {
@@ -32,7 +26,6 @@ export function Canvas(){
     const processQueue = async () => {
         while(editorCtx.changeQueue.length > 0){
             const change = editorCtx.changeQueue.shift();
-            console.log(change);
             editorCtx.setLayers(prev => {
                 return {
                     ...prev,
@@ -42,7 +35,7 @@ export function Canvas(){
                     }
                 }
             })
-            webGLRenderer.current.updateLayerData(change);
+            webGLRenderer.current.updateLayer(change);
         }
         webGLRenderer.current.render();
         processingQueue.current = false;
@@ -54,7 +47,7 @@ export function Canvas(){
         }catch(e){
             // TODO: Show Toast or sth, that webgl isn't available
         }
-        webGLRenderer.current.loadLayerData(Object.values(editorCtx.layers));
+        webGLRenderer.current.loadLayers(editorCtx.layers);
         webGLRenderer.current.render();
     }, [ref]);
 

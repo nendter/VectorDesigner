@@ -1,6 +1,6 @@
 import {CanvasUtils} from "./utils/CanvasUtils";
 import {mat4} from "gl-matrix";
-import {Program} from "./programs/Programs";
+import {ProgramDefinition, ProgramVerticesAttributeKey} from "./programs/Programs";
 import {ShaderUtils} from "./utils/ShaderUtils";
 import {LayerType, LayerTypeDataGenerator} from "./layers/LayerTypes";
 import {BufferUtils} from "./utils/BufferUtils";
@@ -25,7 +25,7 @@ export class WebGLRenderer{
 
         this._initAll().then(() => {
             if(this._unrenderedLayers){
-                this.loadLayerData(this._unrenderedLayers);
+                this.loadLayers(this._unrenderedLayers);
                 this.render();
             }
         });
@@ -35,7 +35,6 @@ export class WebGLRenderer{
     async _initAll(){
         this._initVPMatrices();
         await this._initPrograms();
-        await this._initBuffers();
     }
 
 
@@ -60,7 +59,8 @@ export class WebGLRenderer{
 
     async _initPrograms(){
         this._programs = new Map();
-        for(const programDef of Object.values(Program)){
+        for(const programKey of Object.keys(ProgramDefinition)){
+            const programDef = ProgramDefinition[programKey];
             const program = this._gl.createProgram();
 
             const vertexShader = await ShaderUtils.createAndCompileShader(this._gl.VERTEX_SHADER, programDef.shadersSource + "shader.vert", this._gl);
@@ -69,66 +69,49 @@ export class WebGLRenderer{
             this._gl.attachShader(program, fragmentShader);
             this._gl.linkProgram(program);
 
-            const uniforms = new Map();
-            for(let uniform of programDef.uniforms){
-                uniforms.set(uniform, this._gl.getUniformLocation(program, uniform));
-            }
-
             const attributes = new Map();
-            for(let attribute of programDef.attributes){
-                const location = this._gl.getAttribLocation(program, attribute);
+            for(let attributeKey of Object.keys(programDef.attributes)){
+                const location = this._gl.getAttribLocation(program, attributeKey);
                 if(-1 < location){
                     this._gl.enableVertexAttribArray(location);
-                    attributes.set(attribute, location);
+                    const buffer = this._initArrayBufferForAttribute(programDef.attributes[attributeKey], location);
+                    const attribute = {
+                        location: location,
+                        buffer: buffer
+                    }
+                    attributes.set(attributeKey, attribute);
                 }
             }
 
-            this._programs.set(programDef.id, {
+            const uniforms = new Map();
+            for(let uniformKey of Object.keys(programDef.uniforms)){
+                uniforms.set(uniformKey, this._gl.getUniformLocation(program, uniformKey));
+            }
+
+            this._programs.set(programKey, {
                 program: program,
+                attributes: attributes,
                 uniforms: uniforms,
-                attributes: attributes
             })
         }
     }
 
-
-    async _initBuffers(){
-        const triangleProgram = this._programs.get(Program.Triangle.id);
-        triangleProgram.buffers = {};
-
-        triangleProgram.buffers.vertices = this._initFloatArrayBufferForAttribute(
-            triangleProgram.attributes.get("vertices"),
-            2);
-        triangleProgram.buffers.position = this._initFloatArrayBufferForAttribute(
-            triangleProgram.attributes.get("position"),
-            2);
-        triangleProgram.buffers.size = this._initFloatArrayBufferForAttribute(
-            triangleProgram.attributes.get("size"),
-            2);
-        triangleProgram.buffers.rotation = this._initFloatArrayBufferForAttribute(
-            triangleProgram.attributes.get("rotation"),
-            1);
-        triangleProgram.buffers.color = this._initFloatArrayBufferForAttribute(
-            triangleProgram.attributes.get("color"),
-            4);
-    }
-
-    _initFloatArrayBufferForAttribute(attributeLoc, groupSize){
+    _initArrayBufferForAttribute(attribute, location){
         const buffer = this._gl.createBuffer();
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, buffer);
         this._gl.vertexAttribPointer(
-            attributeLoc,
-            groupSize,
-            this._gl.FLOAT,
+            location,
+            attribute.size,
+            attribute.type.getType(this._gl),
             false,
             0,
             0
-        );
+        )
         return buffer;
     }
 
 
-    loadLayerData(layers){
+    loadLayers(layers){
         if(!this._programs){
             this._unrenderedLayers = layers;
             return;
@@ -136,75 +119,83 @@ export class WebGLRenderer{
         this._unrenderedLayers = undefined;
         this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT);
 
-        const triangleProgram = this._programs.get(Program.Triangle.id);
-        if(!triangleProgram){
-            this._unrenderedLayers = layers;
-            return;
-        }
+        this._programDataMap = new Map();
+        for(let layer of Object.values(layers)){
+            const program = this._programs.get(layer.type.program);
+            if(!program){
+                this._unrenderedLayers = layers;
+                return;
+            }
+            let data = this._programDataMap.get(layer.type.program);
+            if(!data){
+                data = {
+                    [ProgramVerticesAttributeKey]: []
+                };
+                this._programDataMap.set(layer.type.program, data);
+            }
 
-        triangleProgram.data = {
-            vertices: [],
-            position: [],
-            size: [],
-            rotation: [],
-            color: []
-        }
-        for(const layer of layers){
-            switch(layer.type.programId){
-                case Program.Triangle.id:
-                    const dataGenerator = LayerTypeDataGenerator[layer.type.id];
-                    for(let vertices of dataGenerator.generateVertices()){
-                        triangleProgram.data.vertices.push(...vertices);
-                        triangleProgram.data.position.push(...layer.position);
-                        triangleProgram.data.size.push(...layer.size);
-                        triangleProgram.data.rotation.push(layer.rotation);
-                        triangleProgram.data.color.push(...layer.fill);
+            layer.webGlMeta = {
+                offsets: {}
+            };
+
+            const layerTypeDataGenerator = LayerTypeDataGenerator[layer.type.id];
+            const nonVertexAttributes = Array.from(program.attributes.keys()).filter(k => k !== ProgramVerticesAttributeKey);
+            for(let vertices of layerTypeDataGenerator.generateVertices()){
+                data[ProgramVerticesAttributeKey].push(...vertices);
+                for(let attributeKey of nonVertexAttributes){
+                    if(!data[attributeKey]){
+                        data[attributeKey] = [];
                     }
-                    break;
+                    if(!layer.webGlMeta.offsets[attributeKey]){
+                        layer.webGlMeta.offsets[attributeKey] = data[attributeKey].length;
+                    }
+                    const dataToPush = layer[attributeKey];
+                    if(dataToPush instanceof Array){
+                        data[attributeKey].push(...dataToPush);
+                    }else{
+                        data[attributeKey].push(dataToPush);
+                    }
+                }
             }
         }
 
-        for(let attribute of Object.keys(triangleProgram.buffers)){
-            this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleProgram.buffers[attribute]);
-            this._gl.bufferData(this._gl.ARRAY_BUFFER, new Float32Array(triangleProgram.data[attribute]),  attribute === "vertices" ? this._gl.STATIC_DRAW:this._gl.DYNAMIC_DRAW);
+        for(let programKey of this._programDataMap.keys()){
+            const program = this._programs.get(programKey);
+            const data = this._programDataMap.get(programKey);
+            for(let attributeKey of Object.keys(data)){
+                const attribute = program.attributes.get(attributeKey);
+                const attributeDef = ProgramDefinition[programKey].attributes[attributeKey];
+                this._gl.bindBuffer(this._gl.ARRAY_BUFFER, attribute.buffer);
+                this._gl.bufferData(this._gl.ARRAY_BUFFER, attributeDef.type.convertToType(data[attributeKey]), attributeDef.usage(this._gl))
+            }
         }
 
         this._loadedLayers = layers;
     }
 
-    updateLayerData(change){
-        if(!this._loadedLayers || this._loadedLayers.length < 1){
+    updateLayer(change){
+        if(!this._loadedLayers){
             return;
         }
-        let layer;
-        let layerIndex;
-        for(let i = 0; i < this._loadedLayers.length; i++){
-            const l = this._loadedLayers[i];
-            if(l.id === change.layerId){
-                layer = l;
-                layerIndex = i;
-                break;
-            }
-        }
-        if(!layer){
+        let layer = this._loadedLayers[change.layerId];
+        if(!layer || !layer.webGlMeta){
             return;
         }
 
-        console.log("layerIndex")
-        console.log(layerIndex);
+        const program = this._programs.get(layer.type.program);
+        const programDef = ProgramDefinition[layer.type.program];
+        const layerTypeDataGenerator = LayerTypeDataGenerator[layer.type.id];
 
-        const triangleProgram = this._programs.get(Program.Triangle.id);
         for(let updateKey of Object.keys(change.updatedFields)){
-            switch(updateKey){
-                case "position":
-                    this._gl.bindBuffer(this._gl.ARRAY_BUFFER, triangleProgram.buffers.position);
-                    this._gl.bufferSubData(this._gl.ARRAY_BUFFER,
-                        layerIndex*(3*2),
-                        new Float32Array(
-                            ArrayUtils.repeat(change.updatedFields[updateKey], 3)
-                        ));
-                    break;
-            }
+            const attribute = program.attributes.get(updateKey);
+            const attributeDef = programDef.attributes[updateKey];
+            const newData = ArrayUtils.repeat(change.updatedFields[updateKey], layerTypeDataGenerator.vertexAmount);
+            this._gl.bindBuffer(this._gl.ARRAY_BUFFER, attribute.buffer);
+            this._gl.bufferSubData(
+                this._gl.ARRAY_BUFFER,
+                layer.webGlMeta.offsets[updateKey]*attributeDef.type.byteSize,
+                attributeDef.type.convertToType(newData)
+            );
         }
     }
 
@@ -214,17 +205,26 @@ export class WebGLRenderer{
             return;
         }
 
-        const triangleProgram = this._programs.get(Program.Triangle.id);
-        if(!triangleProgram){
-            return;
+        for(let programKey of this._programs.keys()){
+            const program = this._programs.get(programKey);
+            if(!program){
+                return;
+            }
+
+            this._gl.useProgram(program.program);
+
+            this._gl.uniformMatrix4fv(program.uniforms.get("vMatrix"), false, this._vMatrix);
+            this._gl.uniformMatrix4fv(program.uniforms.get("pMatrix"), false, this._pMatrix);
+
+            const triangleAmount = this._programDataMap.get(programKey)[ProgramVerticesAttributeKey].length/ProgramDefinition[programKey].attributes[ProgramVerticesAttributeKey].size;
+
+            this._gl.drawArrays(
+                this._gl.TRIANGLES,
+                0,
+                triangleAmount
+            );
         }
 
-        this._gl.useProgram(triangleProgram.program);
-
-        this._gl.uniformMatrix4fv(triangleProgram.uniforms.get("vMatrix"), false, this._vMatrix);
-        this._gl.uniformMatrix4fv(triangleProgram.uniforms.get("pMatrix"), false, this._pMatrix);
-
-        this._gl.drawArrays(this._gl.TRIANGLES, 0, triangleProgram.data.vertices.length/2);
     }
 
 }
