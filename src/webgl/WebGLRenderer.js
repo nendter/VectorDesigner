@@ -146,7 +146,7 @@ export class WebGLRenderer{
                     if(!data[attributeKey]){
                         data[attributeKey] = [];
                     }
-                    if(!layer.webGlMeta.offsets[attributeKey]){
+                    if(layer.webGlMeta.offsets[attributeKey] === undefined){
                         layer.webGlMeta.offsets[attributeKey] = data[attributeKey].length;
                     }
                     const dataToPush = layer[attributeKey];
