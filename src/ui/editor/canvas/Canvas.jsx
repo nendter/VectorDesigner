@@ -1,8 +1,8 @@
 import "./Canvas.css";
 import {useContext, useEffect, useRef} from "react";
-import {WebGLRenderer} from "../../../webgl/WebGLRenderer";
+import {WebGLRenderer} from "../../../rendering/WebGLRenderer";
 import {EditorContext} from "../EditorContextProvider";
-import {LayerTypeGenerator} from "../../../webgl/layers/LayerTypes";
+import {LayerTypeGenerator} from "../../../rendering/layers/LayerTypes";
 
 export function Canvas(){
     const ref = useRef();
@@ -15,7 +15,6 @@ export function Canvas(){
         if(!ref.current || !webGLRenderer.current){
             return;
         }
-
         if(processingQueue.current){
             return;
         }
@@ -52,6 +51,13 @@ export function Canvas(){
     }, [ref]);
 
     const canvasClick = (ev) => {
+
+        console.log(ev);
+        // TODO: Detect the layer that's been clicked
+        const pos = ev
+
+        return;
+
         editorCtx.setLayers(prev => {
             const newLayer = LayerTypeGenerator[editorCtx.tool.id].generate("Triangle");
             return {

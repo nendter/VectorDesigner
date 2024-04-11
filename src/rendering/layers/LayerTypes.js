@@ -1,5 +1,5 @@
 import {ProgramDefinition} from "../programs/Programs";
-import {Icons} from "../../components/icon/Icon";
+import {Icons} from "../../ui/icon/Icon";
 import {ColorUtils} from "../../utils/ColorUtils";
 import {v4} from "uuid";
 

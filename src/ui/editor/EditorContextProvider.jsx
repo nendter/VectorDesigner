@@ -1,6 +1,6 @@
 import {createContext, Fragment, useState} from "react";
 import {EditorTools} from "./toolbar/EditorToolBar";
-import {LayerType} from "../../webgl/layers/LayerTypes";
+import {LayerType} from "../../rendering/layers/LayerTypes";
 import {vec4} from "gl-matrix";
 import {ColorUtils} from "../../utils/ColorUtils";
 import {Overlay} from "../layout/overlay/Overlay";

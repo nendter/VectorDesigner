@@ -5,6 +5,10 @@ import {ShaderUtils} from "./utils/ShaderUtils";
 import {LayerType, LayerTypeDataGenerator} from "./layers/LayerTypes";
 import {BufferUtils} from "./utils/BufferUtils";
 import {ArrayUtils} from "./utils/ArrayUtils";
+import {MathUtils} from "../maths/MathUtils";
+import {Point} from "../maths/geometry/Point";
+import {QuadTree} from "../maths/spatial_partitioning/QuadTree";
+import {Rectangle} from "../maths/geometry/Rectangle";
 
 /**
  * Height of the canvas in webgl "units".
@@ -12,6 +16,13 @@ import {ArrayUtils} from "./utils/ArrayUtils";
  * @type {number}
  */
 export const CANVAS_WEBGL_HEIGHT = 2.0;
+
+/**
+ * Fixed width and height for the drawable canvas. Outside this no objects can be placed.
+ * Primarily used to init the quadtree, responsible for hit detection.
+ */
+export const CANVAS_DRAWABLE_WIDTH = 200;
+export const CANVAS_DRAWABLE_HEIGHT = 200;
 
 export class WebGLRenderer{
     constructor(canvas) {
@@ -33,10 +44,20 @@ export class WebGLRenderer{
 
 
     async _initAll(){
+        this._initIndex();
         this._initVPMatrices();
         await this._initPrograms();
     }
 
+
+    _initIndex(){
+        this._index = {
+            vertexQuadTree: new QuadTree(new Rectangle(-CANVAS_DRAWABLE_WIDTH/2, -CANVAS_DRAWABLE_WIDTH/2, CANVAS_DRAWABLE_WIDTH, CANVAS_DRAWABLE_HEIGHT), 10),
+
+            cantorVertexLayerIdMap: new Map(),
+            layerIdCantorVerticesMap: new Map()
+        }
+    }
 
     _initVPMatrices(){
         this._vMatrix = mat4.create();
@@ -138,9 +159,24 @@ export class WebGLRenderer{
                 offsets: {}
             };
 
+            const layerVerticesIndexValue = [];
+
             const layerTypeDataGenerator = LayerTypeDataGenerator[layer.type.id];
             const nonVertexAttributes = Array.from(program.attributes.keys()).filter(k => k !== ProgramVerticesAttributeKey);
             for(let vertices of layerTypeDataGenerator.generateVertices()){
+
+                const vertexPoint = new Point(vertices[0], vertices[1]);
+                this._index.vertexQuadTree.insert(vertexPoint);
+
+                const cantorPaired = MathUtils.cantorPairing(vertexPoint, true, 2);
+                layerVerticesIndexValue.push(cantorPaired);
+                const vertexLayerEntry = this._index.cantorVertexLayerIdMap.get(cantorPaired);
+                if(vertexLayerEntry){
+                    vertexLayerEntry.push(layer.id);
+                }else{
+                    this._index.cantorVertexLayerIdMap.set(cantorPaired, [layer.id]);
+                }
+
                 data[ProgramVerticesAttributeKey].push(...vertices);
                 for(let attributeKey of nonVertexAttributes){
                     if(!data[attributeKey]){
@@ -157,6 +193,8 @@ export class WebGLRenderer{
                     }
                 }
             }
+
+            this._index.layerIdCantorVerticesMap.set(layer.id, layerVerticesIndexValue);
         }
 
         for(let programKey of this._programDataMap.keys()){
@@ -224,7 +262,10 @@ export class WebGLRenderer{
                 triangleAmount
             );
         }
+    }
 
+    layerHitDetection(point){
+        // TODO: Use the quadtree to determine the layer
     }
 
 }
