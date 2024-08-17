@@ -1,10 +1,11 @@
 import "./Canvas.css";
-import {useContext, useEffect, useRef} from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import {WebGLRenderer} from "../../../rendering/WebGLRenderer";
 import {EditorContext} from "../EditorContextProvider";
-import {LayerTypeGenerator} from "../../../rendering/layers/LayerTypes";
+import {useKeyTracker} from "../../hooks/useKeys";
+import {mat4} from "gl-matrix";
 
-export function Canvas(){
+export function Canvas() {
     const ref = useRef();
     const webGLRenderer = useRef(undefined);
 
@@ -12,10 +13,10 @@ export function Canvas(){
 
     const processingQueue = useRef(false);
     useEffect(() => {
-        if(!ref.current || !webGLRenderer.current){
+        if (!ref.current || !webGLRenderer.current) {
             return;
         }
-        if(processingQueue.current){
+        if (processingQueue.current) {
             return;
         }
         processingQueue.current = true;
@@ -23,7 +24,7 @@ export function Canvas(){
     }, [editorCtx.changeQueue])
 
     const processQueue = async () => {
-        while(editorCtx.changeQueue.length > 0){
+        while (editorCtx.changeQueue.length > 0) {
             const change = editorCtx.changeQueue.shift();
             editorCtx.setLayers(prev => {
                 return {
@@ -41,33 +42,60 @@ export function Canvas(){
     }
 
     useEffect(() => {
-        try{
+        try {
             webGLRenderer.current = new WebGLRenderer(ref.current);
-        }catch(e){
+        } catch (e) {
             // TODO: Show Toast or sth, that webgl isn't available
         }
         webGLRenderer.current.loadLayers(editorCtx.layers);
         webGLRenderer.current.render();
     }, [ref]);
 
-    const canvasClick = (ev) => {
+    // const canvasClick = (ev) => {
+    //
+    //     console.log(ev);
+    //     console.log(editorCtx.layers);
+    //     // TODO: Detect the layer that's been clicked
+    //     const pos = ev
+    //
+    //     return;
+    //
+    //     editorCtx.setLayers(prev => {
+    //         const newLayer = LayerTypeGenerator[editorCtx.tool.id].generate("Triangle");
+    //         return {
+    //             ...prev,
+    //             [newLayer.id]: newLayer
+    //         }
+    //     })
+    // }
 
-        console.log(ev);
-        // TODO: Detect the layer that's been clicked
-        const pos = ev
+    const [spacePressed, setSpacePressed] = useState(false);
+    const [movingCanvas, setMovingCanvas] = useState(false);
+    const keyMapRef = useKeyTracker({
+        " ": (pressed) => setSpacePressed(pressed)
+    });
 
-        return;
+    const canvasMouseDown = (ev) => {
+        if (spacePressed) {
+            setMovingCanvas(true);
+            return;
+        }
 
-        editorCtx.setLayers(prev => {
-            const newLayer = LayerTypeGenerator[editorCtx.tool.id].generate("Triangle");
-            return {
-                ...prev,
-                [newLayer.id]: newLayer
-            }
-        })
+    }
+    const canvasMouseMove = (ev) => {
+        if (movingCanvas) {
+            mat4.translate(webGLRenderer.current.vMatrix, webGLRenderer.current.vMatrix, [ev.movementX, ev.movementY, 0])
+            webGLRenderer.current.render();
+            return;
+        }
+    }
+    const canvasMouseUp = (ev) => {
+        setMovingCanvas(false);
     }
 
     return (
-        <canvas ref={ref} className={"canvas"} onClick={canvasClick}></canvas>
+        <canvas ref={ref} className={`canvas ${spacePressed ? "space-pressed" : ""} ${movingCanvas ? "moving" : ""}`}
+                onMouseDown={canvasMouseDown}
+                onMouseUp={canvasMouseUp} onMouseMove={canvasMouseMove}></canvas>
     )
 }

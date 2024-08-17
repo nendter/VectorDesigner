@@ -1,4 +1,12 @@
-canvas{
+canvas {
     width: 100%;
     height: calc(100vh - var(--top-bar-height) - var(--bottom-bar-height));
+}
+
+canvas.canvas.space-pressed {
+    cursor: grab;
+}
+
+canvas.canvas.moving {
+    cursor: grabbing;
 }

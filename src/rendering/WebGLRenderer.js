@@ -2,8 +2,7 @@ import {CanvasUtils} from "./utils/CanvasUtils";
 import {mat4} from "gl-matrix";
 import {ProgramDefinition, ProgramVerticesAttributeKey} from "./programs/Programs";
 import {ShaderUtils} from "./utils/ShaderUtils";
-import {LayerType, LayerTypeDataGenerator} from "./layers/LayerTypes";
-import {BufferUtils} from "./utils/BufferUtils";
+import {LayerTypeDataGenerator} from "./layers/LayerTypes";
 import {ArrayUtils} from "./utils/ArrayUtils";
 import {MathUtils} from "../maths/MathUtils";
 import {Point} from "../maths/geometry/Point";
@@ -24,47 +23,50 @@ export const CANVAS_WEBGL_HEIGHT = 2.0;
 export const CANVAS_DRAWABLE_WIDTH = 200;
 export const CANVAS_DRAWABLE_HEIGHT = 200;
 
-export class WebGLRenderer{
+export class WebGLRenderer {
     constructor(canvas) {
         this._canvas = canvas;
         CanvasUtils.resizeInternalToClient(this._canvas);
 
         this._gl = canvas.getContext("webgl");
-        if(!this._gl){
+        if (!this._gl) {
             throw new Error("WebGL not supported!")
         }
 
         this._initAll().then(() => {
-            if(this._unrenderedLayers){
+            if (this._unrenderedLayers) {
                 this.loadLayers(this._unrenderedLayers);
                 this.render();
             }
         });
     }
 
+    get vMatrix() {
 
-    async _initAll(){
+        return this._vMatrix;
+    }
+
+    async _initAll() {
         this._initIndex();
         this._initVPMatrices();
         await this._initPrograms();
     }
 
-
-    _initIndex(){
+    _initIndex() {
         this._index = {
-            vertexQuadTree: new QuadTree(new Rectangle(-CANVAS_DRAWABLE_WIDTH/2, -CANVAS_DRAWABLE_WIDTH/2, CANVAS_DRAWABLE_WIDTH, CANVAS_DRAWABLE_HEIGHT), 10),
+            vertexQuadTree: new QuadTree(new Rectangle(-CANVAS_DRAWABLE_WIDTH / 2, -CANVAS_DRAWABLE_WIDTH / 2, CANVAS_DRAWABLE_WIDTH, CANVAS_DRAWABLE_HEIGHT), 10),
 
             cantorVertexLayerIdMap: new Map(),
             layerIdCantorVerticesMap: new Map()
         }
     }
 
-    _initVPMatrices(){
+    _initVPMatrices() {
         this._vMatrix = mat4.create();
         this._pMatrix = this._createPMatrix();
     }
 
-    _createPMatrix(){
+    _createPMatrix() {
         const canvasAspectRatio = this._canvas.width / this._canvas.height;
         const canvasWebGLWidth = CANVAS_WEBGL_HEIGHT * canvasAspectRatio;
 
@@ -78,9 +80,9 @@ export class WebGLRenderer{
     }
 
 
-    async _initPrograms(){
+    async _initPrograms() {
         this._programs = new Map();
-        for(const programKey of Object.keys(ProgramDefinition)){
+        for (const programKey of Object.keys(ProgramDefinition)) {
             const programDef = ProgramDefinition[programKey];
             const program = this._gl.createProgram();
 
@@ -91,9 +93,9 @@ export class WebGLRenderer{
             this._gl.linkProgram(program);
 
             const attributes = new Map();
-            for(let attributeKey of Object.keys(programDef.attributes)){
+            for (let attributeKey of Object.keys(programDef.attributes)) {
                 const location = this._gl.getAttribLocation(program, attributeKey);
-                if(-1 < location){
+                if (-1 < location) {
                     this._gl.enableVertexAttribArray(location);
                     const buffer = this._initArrayBufferForAttribute(programDef.attributes[attributeKey], location);
                     const attribute = {
@@ -105,7 +107,7 @@ export class WebGLRenderer{
             }
 
             const uniforms = new Map();
-            for(let uniformKey of Object.keys(programDef.uniforms)){
+            for (let uniformKey of Object.keys(programDef.uniforms)) {
                 uniforms.set(uniformKey, this._gl.getUniformLocation(program, uniformKey));
             }
 
@@ -117,7 +119,7 @@ export class WebGLRenderer{
         }
     }
 
-    _initArrayBufferForAttribute(attribute, location){
+    _initArrayBufferForAttribute(attribute, location) {
         const buffer = this._gl.createBuffer();
         this._gl.bindBuffer(this._gl.ARRAY_BUFFER, buffer);
         this._gl.vertexAttribPointer(
@@ -132,8 +134,8 @@ export class WebGLRenderer{
     }
 
 
-    loadLayers(layers){
-        if(!this._programs){
+    loadLayers(layers) {
+        if (!this._programs) {
             this._unrenderedLayers = layers;
             return;
         }
@@ -141,14 +143,14 @@ export class WebGLRenderer{
         this._gl.clear(this._gl.COLOR_BUFFER_BIT | this._gl.DEPTH_BUFFER_BIT);
 
         this._programDataMap = new Map();
-        for(let layer of Object.values(layers)){
+        for (let layer of Object.values(layers)) {
             const program = this._programs.get(layer.type.program);
-            if(!program){
+            if (!program) {
                 this._unrenderedLayers = layers;
                 return;
             }
             let data = this._programDataMap.get(layer.type.program);
-            if(!data){
+            if (!data) {
                 data = {
                     [ProgramVerticesAttributeKey]: []
                 };
@@ -163,7 +165,7 @@ export class WebGLRenderer{
 
             const layerTypeDataGenerator = LayerTypeDataGenerator[layer.type.id];
             const nonVertexAttributes = Array.from(program.attributes.keys()).filter(k => k !== ProgramVerticesAttributeKey);
-            for(let vertices of layerTypeDataGenerator.generateVertices()){
+            for (let vertices of layerTypeDataGenerator.generateVertices()) {
 
                 const vertexPoint = new Point(vertices[0], vertices[1]);
                 this._index.vertexQuadTree.insert(vertexPoint);
@@ -171,24 +173,24 @@ export class WebGLRenderer{
                 const cantorPaired = MathUtils.cantorPairing(vertexPoint, true, 2);
                 layerVerticesIndexValue.push(cantorPaired);
                 const vertexLayerEntry = this._index.cantorVertexLayerIdMap.get(cantorPaired);
-                if(vertexLayerEntry){
+                if (vertexLayerEntry) {
                     vertexLayerEntry.push(layer.id);
-                }else{
+                } else {
                     this._index.cantorVertexLayerIdMap.set(cantorPaired, [layer.id]);
                 }
 
                 data[ProgramVerticesAttributeKey].push(...vertices);
-                for(let attributeKey of nonVertexAttributes){
-                    if(!data[attributeKey]){
+                for (let attributeKey of nonVertexAttributes) {
+                    if (!data[attributeKey]) {
                         data[attributeKey] = [];
                     }
-                    if(layer.webGlMeta.offsets[attributeKey] === undefined){
+                    if (layer.webGlMeta.offsets[attributeKey] === undefined) {
                         layer.webGlMeta.offsets[attributeKey] = data[attributeKey].length;
                     }
                     const dataToPush = layer[attributeKey];
-                    if(dataToPush instanceof Array){
+                    if (dataToPush instanceof Array) {
                         data[attributeKey].push(...dataToPush);
-                    }else{
+                    } else {
                         data[attributeKey].push(dataToPush);
                     }
                 }
@@ -197,10 +199,10 @@ export class WebGLRenderer{
             this._index.layerIdCantorVerticesMap.set(layer.id, layerVerticesIndexValue);
         }
 
-        for(let programKey of this._programDataMap.keys()){
+        for (let programKey of this._programDataMap.keys()) {
             const program = this._programs.get(programKey);
             const data = this._programDataMap.get(programKey);
-            for(let attributeKey of Object.keys(data)){
+            for (let attributeKey of Object.keys(data)) {
                 const attribute = program.attributes.get(attributeKey);
                 const attributeDef = ProgramDefinition[programKey].attributes[attributeKey];
                 this._gl.bindBuffer(this._gl.ARRAY_BUFFER, attribute.buffer);
@@ -211,12 +213,12 @@ export class WebGLRenderer{
         this._loadedLayers = layers;
     }
 
-    updateLayer(change){
-        if(!this._loadedLayers){
+    updateLayer(change) {
+        if (!this._loadedLayers) {
             return;
         }
         let layer = this._loadedLayers[change.layerId];
-        if(!layer || !layer.webGlMeta){
+        if (!layer || !layer.webGlMeta) {
             return;
         }
 
@@ -224,28 +226,28 @@ export class WebGLRenderer{
         const programDef = ProgramDefinition[layer.type.program];
         const layerTypeDataGenerator = LayerTypeDataGenerator[layer.type.id];
 
-        for(let updateKey of Object.keys(change.updatedFields)){
+        for (let updateKey of Object.keys(change.updatedFields)) {
             const attribute = program.attributes.get(updateKey);
             const attributeDef = programDef.attributes[updateKey];
             const newData = ArrayUtils.repeat(change.updatedFields[updateKey], layerTypeDataGenerator.vertexAmount);
             this._gl.bindBuffer(this._gl.ARRAY_BUFFER, attribute.buffer);
             this._gl.bufferSubData(
                 this._gl.ARRAY_BUFFER,
-                layer.webGlMeta.offsets[updateKey]*attributeDef.type.byteSize,
+                layer.webGlMeta.offsets[updateKey] * attributeDef.type.byteSize,
                 attributeDef.type.convertToType(newData)
             );
         }
     }
 
 
-    render(){
-        if(!this._programs){
+    render() {
+        if (!this._programs) {
             return;
         }
 
-        for(let programKey of this._programs.keys()){
+        for (let programKey of this._programs.keys()) {
             const program = this._programs.get(programKey);
-            if(!program){
+            if (!program) {
                 return;
             }
 
@@ -254,7 +256,7 @@ export class WebGLRenderer{
             this._gl.uniformMatrix4fv(program.uniforms.get("vMatrix"), false, this._vMatrix);
             this._gl.uniformMatrix4fv(program.uniforms.get("pMatrix"), false, this._pMatrix);
 
-            const triangleAmount = this._programDataMap.get(programKey)[ProgramVerticesAttributeKey].length/ProgramDefinition[programKey].attributes[ProgramVerticesAttributeKey].size;
+            const triangleAmount = this._programDataMap.get(programKey)[ProgramVerticesAttributeKey].length / ProgramDefinition[programKey].attributes[ProgramVerticesAttributeKey].size;
 
             this._gl.drawArrays(
                 this._gl.TRIANGLES,
@@ -264,7 +266,7 @@ export class WebGLRenderer{
         }
     }
 
-    layerHitDetection(point){
+    layerHitDetection(point) {
         // TODO: Use the quadtree to determine the layer
     }
 
